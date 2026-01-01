@@ -1,65 +1,164 @@
+'use client';
+
+import { Badge } from '@/components/ui/badge';
+import {
+  Marquee,
+  MarqueeContent,
+  MarqueeFade,
+  MarqueeItem,
+} from '@/components/ui/shadcn-io/marquee';
 import Image from 'next/image';
+import { useState, useEffect, useRef } from 'react';
+import { toast } from 'sonner';
+import { FreeGemForm } from './components/free-gem-form';
+import { Button } from '@/components/ui/button';
+
+const MAX_SPIN_SPEED = 2000;
+
+// Random username generator
+const usernames = [
+  'Player123',
+  'GemHunter',
+  'ClashMaster',
+  'LuckyWinner',
+  'GemCollector',
+  'ProGamer',
+  'Winner99',
+  'GemKing',
+  'LuckyPlayer',
+  'ClashPro',
+  'GemSeeker',
+  'Winner2024',
+  'ProClasher',
+  'GemLord',
+  'LuckyGem',
+];
+
+function getRandomUsername(): string {
+  return usernames[Math.floor(Math.random() * usernames.length)];
+}
+
+function getRandomGemCount(): number {
+  return Math.floor(Math.random() * 999) + 2; // 2-1000
+}
+
+// Component for gem with badge - each instance gets its own random number
+function GemWithBadge() {
+  // useState with lazy initializer ensures the random number is only generated once
+  const [badgeNumber] = useState(() => Math.floor(Math.random() * 1000));
+
+  return (
+    <div className='relative'>
+      <Badge className='absolute top-2 left-5 p-4 text-xl'>{badgeNumber}</Badge>
+      <Image
+        src='/gem.webp'
+        alt='FREE GEMs'
+        width={200}
+        height={200}
+        loading='lazy'
+      />
+    </div>
+  );
+}
 
 export default function Home() {
+  const [marqueeSpeed, setMarqueeSpeed] = useState<number>(0);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [gemsWon, setGemsWon] = useState(0);
+
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    function scheduleNextToast() {
+      const delay = Math.floor(Math.random() * 6000) + 2000; // 2-8 seconds in milliseconds
+
+      timeoutRef.current = setTimeout(() => {
+        const username = getRandomUsername();
+        const gemCount = getRandomGemCount();
+        toast.success(`${username} won ${gemCount} gem!`);
+        scheduleNextToast(); // Schedule the next toast
+      }, delay);
+    }
+
+    // Start the first toast
+    scheduleNextToast();
+
+    // Cleanup on unmount
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  function handleSpinClick() {
+    setIsSpinning(true);
+    const start = performance.now();
+    const duration = 5000; // 5 seconds
+
+    function animate(now: number) {
+      const elapsed = now - start;
+      const t = Math.min(elapsed / duration, 1); // normalized [0,1]
+      const speed = Math.round(MAX_SPIN_SPEED * (1 - t));
+      setMarqueeSpeed(speed);
+
+      if (t < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        setGemsWon((prev) => (prev += Math.floor(Math.random() * 1000)));
+        setMarqueeSpeed(0);
+        setIsSpinning(false);
+      }
+    }
+
+    setMarqueeSpeed(MAX_SPIN_SPEED);
+    requestAnimationFrame(animate);
+  }
+
   return (
-    <div className='flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black'>
-      <main className='flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start'>
-        <Image
-          className='dark:invert'
-          src='/next.svg'
-          alt='Next.js logo'
-          width={100}
-          height={20}
-          priority
-        />
-        <div className='flex flex-col items-center gap-6 text-center sm:items-start sm:text-left'>
-          <h1 className='max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50'>
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className='max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400'>
-            Looking for a starting point or more instructions? Head over to{' '}
-            <a
-              href='https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app'
-              className='font-medium text-zinc-950 dark:text-zinc-50'
-            >
-              Templates
-            </a>{' '}
-            or the{' '}
-            <a
-              href='https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app'
-              className='font-medium text-zinc-950 dark:text-zinc-50'
-            >
-              Learning
-            </a>{' '}
-            center.
-          </p>
-        </div>
-        <div className='flex flex-col gap-4 text-base font-medium sm:flex-row'>
-          <a
-            className='flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]'
-            href='https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app'
-            target='_blank'
-            rel='noopener noreferrer'
-          >
+    <div className='space-y-5'>
+      <h1>
+        <span className='text-destructive'>FREE</span> CLASH OF CLANS{' '}
+        <span className='text-primary'>GEMS!</span>
+      </h1>
+      <Marquee>
+        <MarqueeContent pauseOnHover={false}>
+          <MarqueeItem className='select-none'>
             <Image
-              className='dark:invert'
-              src='/vercel.svg'
-              alt='Vercel logomark'
-              width={16}
-              height={16}
+              src='/gem.webp'
+              alt='FREE GEMs'
+              width={50}
+              height={50}
+              loading='lazy'
             />
-            Deploy Now
-          </a>
-          <a
-            className='flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]'
-            href='https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app'
-            target='_blank'
-            rel='noopener noreferrer'
-          >
-            Documentation
-          </a>
+          </MarqueeItem>
+        </MarqueeContent>
+      </Marquee>
+      <p>
+        my dad work at clash of clans and he set it up so that i can add any
+        gems to your accont!
+      </p>
+
+      <h2>GEMS YOU WON: {gemsWon}</h2>
+      <div className='w-full border-24 border-primary'>
+        <div className='relative overflow-hidden p-8'>
+          <Marquee>
+            <MarqueeContent speed={marqueeSpeed} pauseOnHover={false}>
+              <MarqueeItem className='select-none'>
+                <GemWithBadge />
+              </MarqueeItem>
+            </MarqueeContent>
+            <MarqueeFade side='left' />
+            <MarqueeFade side='right' />
+          </Marquee>
+
+          <div className='absolute top-0 left-1/2 w-2 h-96 bg-primary z-10' />
         </div>
-      </main>
+      </div>
+
+      <FreeGemForm onSpin={handleSpinClick} isSpinning={isSpinning} />
+
+      <Button disabled={isSpinning || gemsWon <= 0}>put gem in account</Button>
     </div>
   );
 }
