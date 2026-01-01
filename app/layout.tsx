@@ -90,7 +90,10 @@ export default function RootLayout({
             >
               {children}
             </section>
-            <section id='ad-right' className='flex-1 flex flex-col gap-4 p-4'>
+            <section
+              id='ad-right'
+              className='flex-1 flex flex-col gap-4 p-4 hidden md:flex'
+            >
               <Image
                 src='/FREEGEM.jpg'
                 alt='Free Gem'
